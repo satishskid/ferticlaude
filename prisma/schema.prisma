@@ -1,0 +1,242 @@
+// Prisma Schema for Fertility Clinic AI
+// This is your database schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core clinic management
+model Clinic {
+  id            String   @id @default(cuid())
+  name          String
+  licenseNumber String?  @map("license_number")
+  address       Json?
+  phone         String?
+  email         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  patients      Patient[]
+  users         User[]
+  
+  @@map("clinics")
+}
+
+// User management with roles
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique @map("clerk_id") // Clerk authentication ID
+  email     String   @unique
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  role      UserRole @default(STAFF)
+  clinicId  String   @map("clinic_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  clinic    Clinic @relation(fields: [clinicId], references: [id])
+  
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  NURSE
+  STAFF
+  EMBRYOLOGIST
+}
+
+// Patient management
+model Patient {
+  id          String    @id @default(cuid())
+  clinicId    String    @map("clinic_id")
+  mrn         String    @unique // Medical Record Number
+  firstName   String    @map("first_name")
+  lastName    String    @map("last_name")
+  dateOfBirth DateTime  @map("date_of_birth")
+  phone       String?
+  email       String?
+  address     Json?
+  insurance   Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  clinic          Clinic            @relation(fields: [clinicId], references: [id])
+  profile         PatientProfile?
+  cycles          TreatmentCycle[]
+  labResults      LabResult[]
+  documents       Document[]
+  aiPredictions   AIPrediction[]
+  
+  @@map("patients")
+}
+
+// Patient medical profile
+model PatientProfile {
+  id               String   @id @default(cuid())
+  patientId        String   @unique @map("patient_id")
+  age              Int?
+  height           Float? // in cm
+  weight           Float? // in kg
+  bmi              Float?
+  bloodType        String?  @map("blood_type")
+  diagnosis        Json? // ICD-10 codes and descriptions
+  medicalHistory   Json?    @map("medical_history") // Encrypted sensitive data
+  surgicalHistory  Json?    @map("surgical_history")
+  familyHistory    Json?    @map("family_history")
+  lifestyle        Json? // smoking, alcohol, exercise, etc.
+  allergies        Json?
+  currentMeds      Json?    @map("current_medications")
+  reproductiveHx   Json?    @map("reproductive_history")
+  partnerInfo      Json?    @map("partner_info")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  @@map("patient_profiles")
+}
+
+// Treatment cycles
+model TreatmentCycle {
+  id              String      @id @default(cuid())
+  patientId       String      @map("patient_id")
+  cycleNumber     Int         @map("cycle_number")
+  protocolType    String?     @map("protocol_type") // Long lupron, Antagonist, etc.
+  startDate       DateTime?   @map("start_date")
+  expectedER      DateTime?   @map("expected_retrieval") // Expected egg retrieval
+  actualER        DateTime?   @map("actual_retrieval")
+  transferDate    DateTime?   @map("transfer_date")
+  status          CycleStatus @default(PLANNING)
+  medications     Json? // Medication protocol
+  monitoringData  Json?       @map("monitoring_data") // Ultrasound, hormone levels
+  outcome         Json? // Final results, pregnancy status
+  notes           String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  labResults    LabResult[]
+  documents     Document[]
+  aiPredictions AIPrediction[]
+  
+  @@map("treatment_cycles")
+}
+
+enum CycleStatus {
+  PLANNING
+  STIMULATION
+  MONITORING
+  TRIGGER
+  RETRIEVAL
+  FERTILIZATION
+  TRANSFER
+  TWW // Two week wait
+  POSITIVE
+  NEGATIVE
+  CANCELLED
+  COMPLETED
+}
+
+// Lab results and monitoring
+model LabResult {
+  id             String   @id @default(cuid())
+  patientId      String   @map("patient_id")
+  cycleId        String?  @map("cycle_id")
+  testType       String   @map("test_type") // FSH, AMH, E2, etc.
+  testDate       DateTime @map("test_date")
+  cycleDay       Int?     @map("cycle_day") // Day of stimulation
+  values         Json // Test values with units
+  referenceRange Json?    @map("reference_ranges")
+  flags          Json? // Abnormal flags, alerts
+  interpretation String?
+  orderedBy      String?  @map("ordered_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  patient Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  cycle   TreatmentCycle? @relation(fields: [cycleId], references: [id])
+  
+  @@map("lab_results")
+}
+
+// Document storage metadata
+model Document {
+  id              String      @id @default(cuid())
+  patientId       String      @map("patient_id")
+  cycleId         String?     @map("cycle_id")
+  documentType    DocType     @map("document_type")
+  fileName        String      @map("file_name")
+  filePath        String      @map("file_path") // Cloudflare R2 path
+  fileSize        Int?        @map("file_size")
+  mimeType        String?     @map("mime_type")
+  processed       Boolean     @default(false)
+  aiExtractedData Json?       @map("ai_extracted_data")
+  uploadedBy      String?     @map("uploaded_by")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  
+  // Relations
+  patient Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  cycle   TreatmentCycle? @relation(fields: [cycleId], references: [id])
+  
+  @@map("documents")
+}
+
+enum DocType {
+  ULTRASOUND
+  LAB_REPORT
+  CONSENT_FORM
+  PRESCRIPTION
+  MEDICAL_HISTORY
+  INSURANCE_CARD
+  EMBRYO_IMAGE
+  SPERM_ANALYSIS
+  OTHER
+}
+
+// AI predictions and recommendations
+model AIPrediction {
+  id               String   @id @default(cuid())
+  patientId        String   @map("patient_id")
+  cycleId          String?  @map("cycle_id")
+  predictionType   String   @map("prediction_type") // success_rate, protocol_recommendation, etc.
+  inputData        Json     @map("input_data") // Data used for prediction
+  predictionResult Json     @map("prediction_result") // AI output
+  confidenceScore  Float?   @map("confidence_score") // 0-1
+  modelVersion     String?  @map("model_version")
+  createdAt        DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  patient Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  cycle   TreatmentCycle? @relation(fields: [cycleId], references: [id])
+  
+  @@map("ai_predictions")
+}
+
+// Audit trail for HIPAA compliance
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?  @map("user_id")
+  action       String // CREATE, READ, UPDATE, DELETE
+  resourceType String   @map("resource_type") // Patient, Document, etc.
+  resourceId   String   @map("resource_id")
+  oldValues    Json?    @map("old_values")
+  newValues    Json?    @map("new_values")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  @@map("audit_logs")
+}
