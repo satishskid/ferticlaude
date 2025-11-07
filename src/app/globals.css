@@ -1,26 +1,165 @@
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    /* Fertility-focused soothing palette */
+    --background: 355 20% 98%;          /* Warm cream white */
+    --foreground: 340 15% 25%;          /* Soft dark rose-brown */
+    --card: 0 0% 100%;                  /* Pure white for cards */
+    --card-foreground: 340 15% 25%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 340 15% 25%;
+    
+    /* Primary: Warm coral/rose tones */
+    --primary: 350 70% 75%;             /* Soft coral */
+    --primary-foreground: 340 15% 25%;
+    
+    /* Secondary: Sage green accents */
+    --secondary: 120 25% 85%;           /* Soft sage green */
+    --secondary-foreground: 340 15% 25%;
+    
+    /* Muted: Warm neutral backgrounds */
+    --muted: 355 15% 95%;               /* Warm light gray */
+    --muted-foreground: 340 10% 50%;
+    
+    /* Accent: Warm lavender */
+    --accent: 280 35% 88%;              /* Soft lavender */
+    --accent-foreground: 340 15% 25%;
+    
+    --destructive: 0 70% 65%;           /* Softer red */
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders and inputs with warmth */
+    --border: 350 20% 90%;              /* Warm light border */
+    --input: 350 15% 94%;               /* Warm input background */
+    --ring: 350 60% 70%;                /* Coral focus ring */
+    --radius: 0.75rem;                  /* Slightly more rounded */
+    
+    /* Custom fertility theme colors */
+    --fertility-rose: 350 70% 85%;      /* Light rose */
+    --fertility-sage: 120 30% 75%;      /* Sage green */
+    --fertility-lavender: 280 40% 85%;  /* Warm lavender */
+    --fertility-cream: 355 25% 96%;     /* Warm cream */
+  }
+
+  .dark {
+    /* Dark theme with warm, muted tones */
+    --background: 340 15% 8%;           /* Warm dark background */
+    --foreground: 355 20% 92%;          /* Warm light text */
+    --card: 340 10% 12%;                /* Dark warm cards */
+    --card-foreground: 355 20% 92%;
+    --popover: 340 10% 12%;
+    --popover-foreground: 355 20% 92%;
+    --primary: 350 60% 65%;             /* Muted coral in dark */
+    --primary-foreground: 340 15% 8%;
+    --secondary: 120 20% 20%;           /* Dark sage */
+    --secondary-foreground: 355 20% 92%;
+    --muted: 340 10% 15%;               /* Muted dark background */
+    --muted-foreground: 340 5% 65%;
+    --accent: 280 25% 25%;              /* Muted dark lavender */
+    --accent-foreground: 355 20% 92%;
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 355 20% 92%;
+    --border: 340 10% 20%;              /* Warm dark borders */
+    --input: 340 10% 18%;               /* Dark input background */
+    --ring: 350 50% 60%;                /* Muted coral ring */
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom fertility theme utilities */
+@layer utilities {
+  .fertility-gradient {
+    background: linear-gradient(135deg, hsl(var(--fertility-rose)) 0%, hsl(var(--fertility-cream)) 50%, hsl(var(--fertility-sage)) 100%);
+  }
+  
+  .fertility-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--fertility-rose));
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px hsla(var(--fertility-rose), 0.1);
+  }
+  
+  .fertility-button {
+    background: linear-gradient(135deg, hsl(var(--fertility-rose)) 0%, hsl(var(--primary)) 100%);
+    color: hsl(var(--primary-foreground));
+    border-radius: 0.75rem;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .fertility-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 25px hsla(var(--fertility-rose), 0.2);
+  }
+  
+  .fertility-text-primary {
+    color: hsl(var(--primary));
+  }
+  
+  .fertility-text-sage {
+    color: hsl(var(--fertility-sage));
+  }
+  
+  .fertility-bg-accent {
+    background-color: hsl(var(--fertility-lavender));
+  }
+
+  /* Enhanced readability for analysis sections */
+  .formatted-analysis h4 {
+    scroll-margin-top: 2rem;
+  }
+  
+  .formatted-analysis p {
+    max-width: 65ch; /* Optimal reading width */
+    hyphens: auto;
+    word-wrap: break-word;
+  }
+  
+  .formatted-analysis ul, 
+  .formatted-analysis ol {
+    padding-left: 1.5rem;
+  }
+  
+  .formatted-analysis li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  /* Visual hierarchy improvements */
+  .section-divider {
+    border-top: 2px solid hsl(var(--fertility-rose));
+    margin: 1.5rem 0;
+    opacity: 0.3;
+  }
+
+  .highlight-box {
+    background: linear-gradient(135deg, hsl(var(--fertility-cream)) 0%, hsl(var(--fertility-rose)) 100%);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border-left: 4px solid hsl(var(--fertility-rose));
+    margin: 1rem 0;
+  }
+
+  .clinical-tag {
+    display: inline-block;
+    background: hsl(var(--fertility-sage));
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 0.25rem 0.25rem 0.25rem 0;
+  }
 }

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -64,11 +65,20 @@ export const fertilityDB = {
     confidence?: number;
     patientId: string;
     cycleId?: string;
+    context?: Record<string, unknown>;
   }) {
+    const inputPayload: Prisma.JsonObject = {
+      input: data.input,
+    };
+
+    if (data.context) {
+      inputPayload.context = data.context as Prisma.JsonObject;
+    }
+
     return await prisma.aIPrediction.create({
       data: {
         predictionType: 'CONSULTATION',
-        inputData: { input: data.input },
+        inputData: inputPayload,
         predictionResult: { output: data.output, model: data.model },
         confidenceScore: data.confidence || 0.85,
         modelVersion: data.model,
@@ -83,16 +93,16 @@ export const fertilityDB = {
     patientId: string;
     cycleId?: string;
     testType: string;
-    values: Record<string, any>;
+    values: Prisma.JsonValue;
     testDate: Date;
-    referenceRange?: Record<string, any>;
+    referenceRange?: Prisma.JsonValue;
   }) {
     return await prisma.labResult.create({
       data: {
         testType: data.testType,
-        values: data.values,
+  values: data.values as Prisma.InputJsonValue,
         testDate: data.testDate,
-        referenceRange: data.referenceRange,
+  referenceRange: data.referenceRange as Prisma.InputJsonValue | undefined,
         patient: { connect: { id: data.patientId } },
         cycle: data.cycleId ? { connect: { id: data.cycleId } } : undefined,
       },
